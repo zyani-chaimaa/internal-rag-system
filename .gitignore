@@ -1,0 +1,9 @@
+.env
+RAG/
+__pycache__/
+*.pyc 
+.DS_Store
+data/vectorstore/
+logs/
+*.log 
+.streamlit/secrets.toml
