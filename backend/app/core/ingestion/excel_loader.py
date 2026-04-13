@@ -1,7 +1,7 @@
 import pandas as pd
 from pathlib import Path
 from typing import List
-from src.utils.logger import log
+from backend.app.core.utils.logger import log
 
 def load_spreadsheet(file_path: str | Path) -> List[dict]:
     file_path = Path(file_path)

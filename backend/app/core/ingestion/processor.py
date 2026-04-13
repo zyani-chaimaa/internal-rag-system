@@ -1,7 +1,7 @@
 from typing import List, Dict
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from src.config import CHUNK_SIZE, CHUNK_OVERLAP
-from src.utils.logger import log
+from backend.app.core.config import CHUNK_SIZE, CHUNK_OVERLAP
+from backend.app.core.utils.logger import log
 
 def split_documents(raw_docs: List[Dict]) -> List[Dict]:
     """Break documents into smaller chunks for the vector store."""

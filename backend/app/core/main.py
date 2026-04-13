@@ -1,10 +1,10 @@
-from src.ingestion.pdf_loader import load_pdf
-from src.ingestion.excel_loader import load_spreadsheet
-from src.ingestion.processor import split_documents
-from src.vectorstore.chroma_store import VectorStore
-from src.retrieval.retriever import get_relevant_context
-from src.llm.claude_client import ClaudeClient
-from src.utils.logger import log
+from backend.app.core.ingestion.pdf_loader import load_pdf
+from backend.app.core.ingestion.excel_loader import load_spreadsheet
+from backend.app.core.ingestion.processor import split_documents
+from backend.app.core.vectorstore.chroma_store import VectorStore
+from backend.app.core.retrieval.retriever import get_relevant_context
+from backend.app.core.llm.claude_client import ClaudeClient
+from backend.app.core.utils.logger import log
 
 class RAGSystem:
     def __init__(self):
@@ -27,11 +27,11 @@ class RAGSystem:
         self.db.add_documents(chunks)
         log.info(f"Successfully ingested {file_path.name}")
 
-    def ask(self, question: str, history: list = None) -> str:
+    def ask(self, question: str) -> str:
         """The full pipeline: Query DB -> Get Context -> Ask Claude"""
         context = get_relevant_context(question, self.db)
         if not context:
-            return "No relevant documents found."
+            return "No relevant documents found. Please upload a file first."
        
-        answer = self.llm.generate_answer(question, context, history)
+        answer = self.llm.generate_answer(question, context)
         return answer

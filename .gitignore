@@ -7,3 +7,4 @@ data/vectorstore/
 logs/
 *.log 
 .streamlit/secrets.toml
+backend/app/data/

@@ -1,6 +1,6 @@
 import sys
 from loguru import logger
-from src.config import LOGS_DIR
+from backend.app.core.config import LOGS_DIR
 
 def setup_logger():
     

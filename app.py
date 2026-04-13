@@ -1,9 +1,9 @@
 import streamlit as st
 import shutil
 from pathlib import Path
-from src.main import RAGSystem
-from src.config import UPLOADS_DIR
-from src.utils.logger import log
+from backend.app.core.main import RAGSystem
+from backend.app.core.config import UPLOADS_DIR
+from backend.app.core.utils.logger import log
 
 # 1. Page Configuration
 st.set_page_config(page_title="My Personal RAG", page_icon="🤖", layout="wide")
@@ -59,7 +59,7 @@ if prompt := st.chat_input("Ask a question about your documents:"):
     # Generate Response
     with st.chat_message("assistant"):
         with st.spinner("Searching documents & thinking..."):
-            response = st.session_state.rag.ask(prompt, history=st.session_state.messages)
+            response = st.session_state.rag.ask(prompt)
             st.markdown(response)
    
     # Add assistant response to chat history
