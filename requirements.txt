@@ -6,7 +6,8 @@ pandas==2.2.1
 streamlit==1.33.0 
 langchain-text-splitters==0.0.2 
 python-dotenv==1.0.1 
-torch==2.2.2 
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.2.2+cpu
 loguru==0.7.2  
 fastapi==0.110.0
 uvicorn==0.29.0
