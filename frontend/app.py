@@ -1,79 +1,64 @@
 import streamlit as st
-import requests
 import os
+import sys
+import uuid
 
-API_URL = os.getenv("API_URL","http://localhost:8000")
+# --- 1. PROJECT PATH FIX ---
+# This ensures the frontend can see the 'backend' folder
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from backend.app.core.main import RAGSystem
 
 st.set_page_config(page_title="Advanced RAG", page_icon="🚀")
 
-# --- 1. INITIALIZE ALL STATE VARIABLES IMMEDIATELY ---
+# --- 2. INITIALIZE ENGINE & SESSION ---
+if "rag" not in st.session_state:
+    with st.spinner("Initializing RAG Engine..."):
+        # This creates the RAG instance once and keeps it in memory
+        st.session_state.rag = RAGSystem()
+
 if "messages" not in st.session_state:
     st.session_state.messages = []
+
 if "session_id" not in st.session_state:
-    st.session_state.session_id = None
+    st.session_state.session_id = str(uuid.uuid4())
 
-# --- 2. CONNECTION CHECK & SESSION START ---
-if st.session_state.session_id is None:
-    try:
-        # Try to start a session
-        resp = requests.post(f"{API_URL}/session/start", timeout=2)
-        if resp.status_code == 200:
-            st.session_state.session_id = resp.json()["session_id"]
-            st.rerun() # Refresh to show the UI
-        else:
-            st.error("Backend is awake but refused to start a session.")
-            st.stop()
-    except Exception:
-        st.error("❌ Backend Offline. Please start Uvicorn in your other terminal.")
-        st.info("Command: python3 -m uvicorn backend.app.main:app --reload --port 8000")
-        st.stop()
-
-# --- 3. THE UI (Only runs if session_id exists) ---
-st.title("🚀 Advanced Multi-User RAG")
+# --- 3. UI LAYOUT ---
+st.title("🚀 Internal RAG System")
 
 with st.sidebar:
-    st.write(f"Connected as: `{st.session_state.session_id[:8]}`")
-    uploaded_file = st.file_uploader("Upload a PDF", type="pdf")
+    st.write(f"Session: `{st.session_state.session_id[:8]}`")
+    uploaded_file = st.file_uploader("Upload Knowledge Base (PDF)", type="pdf")
    
     if st.button("Index Document"):
         if uploaded_file:
-            with st.spinner("Processing PDF..."):
-                files = {"file": (uploaded_file.name, uploaded_file.getvalue(), "application/pdf")}
-                # We send the session_id in the HEADERS as a security check
-                headers = {"session-id": st.session_state.session_id}
-               
+            with st.spinner("Indexing..."):
                 try:
-                    r = requests.post(f"{API_URL}/upload/file", files=files, headers=headers)
-                    if r.status_code == 200:
-                        st.success("✅ Document indexed!")
-                    else:
-                        # This tells us EXACTLY what the backend didn't like
-                        error_detail = r.json().get('detail', 'Unknown error')
-                        st.error(f"❌ Upload Failed: {error_detail}")
+                    # DIRECT CALL: Using your actual method name
+                    st.session_state.rag.ingest_file(uploaded_file)
+                    st.success("✅ Knowledge Base Updated!")
                 except Exception as e:
-                    st.error(f"❌ Connection error: {e}")
+                    st.error(f"❌ Indexing Error: {e}")
+        else:
+            st.warning("Please upload a file first.")
 
 # --- 4. CHAT INTERFACE ---
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-if prompt := st.chat_input("Ask a question..."):
+if prompt := st.chat_input("Ask about your documents..."):
+    # Add user message
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
+    # Generate AI response
     with st.chat_message("assistant"):
-        headers = {"session-id": st.session_state.session_id}
-        payload = {"question": prompt, "session_id": st.session_state.session_id}
-       
         try:
-            r = requests.post(f"{API_URL}/chat/query", json=payload, headers=headers)
-            if r.status_code == 200:
-                ans = r.json()["answer"]
-                st.markdown(ans)
-                st.session_state.messages.append({"role": "assistant", "content": ans})
-            else:
-                st.error("Backend error during chat.")
+            # DIRECT CALL: Querying the in-memory engine
+            response = st.session_state.rag.query(prompt)
+            st.markdown(response)
+            st.session_state.messages.append({"role": "assistant", "content": response})
         except Exception as e:
-            st.error(f"Connection lost: {e}")
+            st.error(f"AI Error: {e}")
