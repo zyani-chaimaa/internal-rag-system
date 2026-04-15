@@ -8,3 +8,4 @@ logs/
 *.log 
 .streamlit/secrets.toml
 backend/app/data/
+data/uploads/
