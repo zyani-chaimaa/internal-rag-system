@@ -1,25 +1,19 @@
 import chromadb
-from chromadb.utils import embedding_functions
-from backend.app.core.config import VECTORSTORE_DIR, EMBED_MODEL
+from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
+from backend.app.core.config import VECTORSTORE_DIR
 from backend.app.core.utils.logger import log
 from typing import List, Dict
 
 class VectorStore:
     def __init__(self):
-        # The embedding function stays the same for everyone
-        self.embedding_fn = embedding_functions.SentenceTransformerEmbeddingFunction(
-            model_name=EMBED_MODEL
-        )
-       
-        # The main database client
+        # DefaultEmbeddingFunction uses ONNX (no PyTorch needed) — works on Streamlit Cloud
+        self.embedding_fn = DefaultEmbeddingFunction()
+
         self.client = chromadb.PersistentClient(path=str(VECTORSTORE_DIR))
         log.info(f"Vector Store initialized at {VECTORSTORE_DIR}")
 
     def _get_user_collection(self, session_id: str):
-        """
-        Internal helper to find a user's specific collection.
-        Chroma names must be 3-63 chars and no dashes, so we clean the UUID.
-        """
+        """Each user session gets its own isolated collection."""
         safe_name = f"user_{session_id.replace('-', '_')}"
         return self.client.get_or_create_collection(
             name=safe_name,
@@ -29,7 +23,7 @@ class VectorStore:
     def add_documents(self, chunks: List[Dict], session_id: str):
         """Store text chunks in the user's private collection."""
         collection = self._get_user_collection(session_id)
-       
+
         ids = [c["chunk_id"] for c in chunks]
         texts = [c["text"] for c in chunks]
         metadatas = [{k: v for k, v in c.items() if k != "text"} for c in chunks]
@@ -42,10 +36,10 @@ class VectorStore:
         log.info(f"Added {len(chunks)} chunks for session: {session_id}")
 
     def query(self, query_text: str, session_id: str, n_results: int = 5):
-        """Search ONLY the collection belonging to this session_id."""
+        """Search only the collection belonging to this session_id."""
         log.info(f"Searching session {session_id} for: {query_text}")
         collection = self._get_user_collection(session_id)
-       
+
         results = collection.query(
             query_texts=[query_text],
             n_results=n_results

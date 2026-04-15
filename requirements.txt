@@ -3,12 +3,11 @@ langchain
 langchain-community
 langchain-anthropic
 chromadb
-sentence-transformers
 pdfplumber
 openpyxl
 pandas
 python-dotenv
 loguru
 pypdf
-torch
 protobuf==4.25.3
+anthropic

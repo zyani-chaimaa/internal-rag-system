@@ -11,10 +11,10 @@ class RAGSystem:
         self.db = VectorStore()
         self.llm = ClaudeClient()
 
-    def ingest_file(self, file_path):
+    def ingest_file(self, file_path, session_id: str):
         """The full pipeline: Load -> Split -> Store"""
         suffix = file_path.suffix.lower()
-       
+
         if suffix == ".pdf":
             raw_docs = load_pdf(file_path)
         elif suffix in [".csv", ".xlsx", ".xls"]:
@@ -22,16 +22,16 @@ class RAGSystem:
         else:
             log.warning(f"Unsupported file type: {suffix}")
             return
-       
-        chunks = split_documents(raw_docs)
-        self.db.add_documents(chunks)
-        log.info(f"Successfully ingested {file_path.name}")
 
-    def ask(self, question: str) -> str:
+        chunks = split_documents(raw_docs)
+        self.db.add_documents(chunks, session_id)
+        log.info(f"Successfully ingested {file_path.name} for session {session_id}")
+
+    def ask(self, question: str, session_id: str) -> str:
         """The full pipeline: Query DB -> Get Context -> Ask Claude"""
-        context = get_relevant_context(question, self.db)
+        context = get_relevant_context(question, self.db, session_id)
         if not context:
-            return "No relevant documents found. Please upload a file first."
-       
+            return "No relevant documents found. Please upload and index a file first."
+
         answer = self.llm.generate_answer(question, context)
         return answer
