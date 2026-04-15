@@ -27,11 +27,15 @@ class RAGSystem:
         self.db.add_documents(chunks, session_id)
         log.info(f"Successfully ingested {file_path.name} for session {session_id}")
 
-    def ask(self, question: str, session_id: str) -> str:
+    def ask(self, question: str, session_id: str, history: list = None) -> str:
         """The full pipeline: Query DB -> Get Context -> Ask Claude"""
         context = get_relevant_context(question, self.db, session_id)
         if not context:
             return "No relevant documents found. Please upload and index a file first."
 
-        answer = self.llm.generate_answer(question, context)
+        answer = self.llm.generate_answer(question, context, history=history)
         return answer
+
+    def get_doc_count(self, session_id: str) -> int:
+        """Returns the number of indexed chunks for this session."""
+        return self.db.get_count(session_id)
